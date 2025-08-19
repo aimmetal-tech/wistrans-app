@@ -32,6 +32,7 @@ class _MainAppPageState extends State<MainAppPage> {
             children: _pages,
           ),
           bottomNavigationBar: BottomNavigationBar(
+            
             currentIndex: appState.currentIndex,
             onTap: (index) {
               appState.setCurrentIndex(index);

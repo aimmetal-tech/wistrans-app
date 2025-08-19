@@ -22,6 +22,7 @@ class AppTheme {
 
   static ThemeData get lightTheme {
     return ThemeData(
+      splashFactory: NoSplash.splashFactory,
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
@@ -34,7 +35,7 @@ class AppTheme {
         onSurface: textPrimaryColor,
         onError: Colors.white,
       ),
-      
+
       // 应用栏主题
       appBarTheme: const AppBarTheme(
         backgroundColor: surfaceColor,
@@ -61,9 +62,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surfaceColor,
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
 
@@ -83,7 +82,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
 
       // 按钮主题
@@ -96,10 +98,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
 
@@ -107,9 +106,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
       ),
@@ -122,10 +119,7 @@ class AppTheme {
       ),
 
       // 图标主题
-      iconTheme: const IconThemeData(
-        color: textSecondaryColor,
-        size: 24,
-      ),
+      iconTheme: const IconThemeData(color: textSecondaryColor, size: 24),
 
       // 文本主题
       textTheme: const TextTheme(

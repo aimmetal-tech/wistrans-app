@@ -9,7 +9,7 @@ class AppState extends ChangeNotifier {
   int get currentIndex => _currentIndex;
 
   // 对话相关状态
-  List<Conversation> _conversations = [];
+  final List<Conversation> _conversations = [];
   Conversation? _currentConversation;
   bool _isLoadingConversation = false;
   String? _conversationError;
@@ -20,7 +20,7 @@ class AppState extends ChangeNotifier {
   String? get conversationError => _conversationError;
 
   // 新闻相关状态
-  List<TranslatedNews> _newsList = [];
+  final List<TranslatedNews> _newsList = [];
   bool _isLoadingNews = false;
   String? _newsError;
 

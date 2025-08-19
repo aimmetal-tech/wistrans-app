@@ -16,6 +16,7 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _selectedModel = 'qwen-turbo-latest';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void dispose() {
@@ -55,12 +56,25 @@ class _ChatPageState extends State<ChatPage> {
     _scrollToBottom();
   }
 
+  void _selectConversation(Conversation conversation) {
+    context.read<AppState>().selectConversation(conversation);
+    Navigator.pop(context); // 关闭抽屉
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppTheme.backgroundColor,
+      drawer: _buildDrawer(),
       appBar: AppBar(
         title: const Text('AI 对话'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -108,6 +122,9 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Consumer<AppState>(
         builder: (context, appState, child) {
+          // 在每次重建时尝试滚动到底部
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+          
           if (appState.currentConversation == null) {
             return _buildWelcomeScreen();
           }
@@ -246,6 +263,97 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Consumer<AppState>(
+        builder: (context, appState, child) {
+          return Column(
+            children: [
+              // 抽屉头部 - 用户信息
+              UserAccountsDrawerHeader(
+                accountName: const Text(
+                  '英语学习者',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                accountEmail: const Text(
+                  'learner@example.com',
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+                currentAccountPicture: CircleAvatar(
+                  backgroundImage: const AssetImage(
+                    'assets/user_demo.png',
+                  ),
+                  backgroundColor: AppTheme.primaryColor,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              // 新建对话按钮
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    context.read<AppState>().createNewConversation();
+                    Navigator.pop(context); // 关闭抽屉
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('新建对话'),
+                ),
+              ),
+              // 历史对话列表
+              Expanded(
+                child: appState.conversations.isEmpty
+                    ? const Center(
+                        child: Text('暂无历史对话'),
+                      )
+                    : ListView.builder(
+                        itemCount: appState.conversations.length,
+                        itemBuilder: (context, index) {
+                          final conversation = appState.conversations[index];
+                          final isSelected = appState.currentConversation?.id == conversation.id;
+                          return ListTile(
+                            title: Text(
+                              conversation.title.isEmpty 
+                                ? '新对话' 
+                                : conversation.title,
+                              style: TextStyle(
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${conversation.messages.length} 条消息',
+                              style: TextStyle(
+                                color: isSelected 
+                                  ? AppTheme.primaryColor 
+                                  : AppTheme.textSecondaryColor,
+                              ),
+                            ),
+                            selected: isSelected,
+                            onTap: () => _selectConversation(conversation),
+                            trailing: Text(
+                              _formatDate(conversation.updatedAt),
+                              style: TextStyle(
+                                color: AppTheme.textSecondaryColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildWelcomeScreen() {
     return Center(
       child: Column(
@@ -303,6 +411,21 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays == 0) {
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return '昨天';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}天前';
+    } else {
+      return '${dateTime.month}-${dateTime.day}';
+    }
   }
 }
 

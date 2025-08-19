@@ -110,36 +110,32 @@ class ApiService {
       await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
         buffer += chunk;
         
-        while (buffer.contains('\n\n')) {
-          final eventEnd = buffer.indexOf('\n\n');
-          final eventData = buffer.substring(0, eventEnd);
-          buffer = buffer.substring(eventEnd + 2);
+        List<String> lines = buffer.split('\n');
+        buffer = lines.last; // 最后一行可能不完整，保留在buffer中
+        
+        for (int i = 0; i < lines.length - 1; i++) {
+          String line = lines[i];
           
-          final lines = eventData.split('\n');
-          String eventType = '';
-          String data = '';
-          
-          for (final line in lines) {
-            if (line.startsWith('event: ')) {
-              eventType = line.substring(7);
-            } else if (line.startsWith('data: ')) {
-              data = line.substring(6);
-            }
-          }
-          
-          if (eventType == 'data' && data.isNotEmpty) {
-            try {
-              final jsonData = json.decode(data);
-              if (jsonData['choices'] != null && 
-                  jsonData['choices'].isNotEmpty && 
-                  jsonData['choices'][0]['delta'] != null &&
-                  jsonData['choices'][0]['delta']['content'] != null) {
-                yield jsonData['choices'][0]['delta']['content'];
+          if (line.startsWith('event:')) {
+            // 事件类型行，当前实现中我们主要关注data事件
+            // 可以扩展处理start和end事件
+          } else if (line.startsWith('data:')) {
+            String data = line.substring(5).trim(); // 移除"data: "前缀
+            if (data.isNotEmpty) {
+              try {
+                final jsonData = json.decode(data);
+                if (jsonData['choices'] != null && 
+                    jsonData['choices'].isNotEmpty && 
+                    jsonData['choices'][0]['delta'] != null &&
+                    jsonData['choices'][0]['delta']['content'] != null) {
+                  yield jsonData['choices'][0]['delta']['content'];
+                }
+              } catch (e) {
+                // 忽略JSON解析错误
               }
-            } catch (e) {
-              // 忽略JSON解析错误
             }
           }
+          // 忽略空行和其他不相关的行
         }
       }
     } catch (e) {

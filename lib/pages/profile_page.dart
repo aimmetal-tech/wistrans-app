@@ -23,27 +23,34 @@ class ProfilePage extends StatelessWidget {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Column(
+                    child: Row(
                       children: [
                         CircleAvatar(
-                          radius: 40,
+                          radius: 25,
                           backgroundColor: AppTheme.primaryColor,
                           child: Icon(
                             Icons.person,
-                            size: 40,
+                            size: 25,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          appState.username ?? '未登录用户',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          appState.isLoggedIn ? '已登录' : '点击登录',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondaryColor,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                appState.username ?? '未登录用户',
+                                style: Theme.of(context).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                appState.isLoggedIn ? '已登录' : '点击登录',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.textSecondaryColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -51,7 +58,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 // 功能菜单
                 Card(
@@ -99,7 +106,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 // 统计信息
                 Card(
@@ -146,7 +153,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 // 关于信息
                 Card(
@@ -185,7 +192,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 // 退出登录按钮
                 if (appState.isLoggedIn)

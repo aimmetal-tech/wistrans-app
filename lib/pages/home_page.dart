@@ -169,6 +169,7 @@ class NewsCard extends StatelessWidget {
             
             // 原文标题
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.backgroundColor,
@@ -194,6 +195,7 @@ class NewsCard extends StatelessWidget {
             
             // 原文摘要
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.backgroundColor,
@@ -219,15 +221,16 @@ class NewsCard extends StatelessWidget {
                   color: AppTheme.textSecondaryColor,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  _formatDateTime(news.originalNews.fetchTime),
-                  style: Theme.of(context).textTheme.bodySmall,
+                Expanded(
+                  child: Text(
+                    _formatDateTime(news.originalNews.fetchTime),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
-                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                                         color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
