@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../models/news.dart';
 import '../style/app_theme.dart';
+import '../utils/log.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,11 +15,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   void initState() {
+    Log.enter('HomePage.initState');
     super.initState();
     // 页面加载时获取新闻
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      Log.i('主页初始化完成，开始获取新闻');
       context.read<AppState>().fetchAndTranslateNews();
     });
+    Log.exit('HomePage.initState');
   }
 
   @override

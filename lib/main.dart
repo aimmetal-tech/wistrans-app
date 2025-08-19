@@ -3,15 +3,20 @@ import 'package:provider/provider.dart';
 import 'services/app_state.dart';
 import 'style/app_theme.dart';
 import 'pages/main_app_page.dart';
+import 'utils/log.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  Log.i('应用启动');
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    Log.enter('MyApp.build');
+    final app = ChangeNotifierProvider(
       create: (context) => AppState(),
       child: MaterialApp(
         title: 'Wistrans 学习助手',
@@ -20,5 +25,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
       ),
     );
+    Log.exit('MyApp.build');
+    return app;
   }
 }

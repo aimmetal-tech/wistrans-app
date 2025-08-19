@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../models/conversation.dart';
 import '../style/app_theme.dart';
+import '../utils/log.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -20,9 +21,12 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    Log.enter('ChatPage.dispose');
     _messageController.dispose();
     _scrollController.dispose();
+    Log.i('聊天页面资源释放完成');
     super.dispose();
+    Log.exit('ChatPage.dispose');
   }
 
   void _scrollToBottom() {
@@ -37,28 +41,49 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
+    Log.enter('ChatPage._sendMessage');
     final message = _messageController.text.trim();
-    if (message.isEmpty) return;
+    if (message.isEmpty) {
+      Log.d('消息为空，不发送');
+      Log.exit('ChatPage._sendMessage');
+      return;
+    }
 
     final appState = context.read<AppState>();
+    Log.business('用户发送消息', {'messageLength': message.length, 'model': _selectedModel});
     
-    // 如果没有当前对话，创建一个新的
+    // 如果没有当前对话，先创建一个新的
     if (appState.currentConversation == null) {
-      appState.createNewConversation().then((_) {
-        appState.sendMessage(message, _selectedModel);
-      });
+      Log.i('当前没有对话，创建新对话');
+      try {
+        await appState.createNewConversation();
+        Log.i('新对话创建完成，开始发送消息');
+      } catch (e, stackTrace) {
+        Log.e('创建新对话失败', e, stackTrace);
+        Log.exit('ChatPage._sendMessage');
+        return;
+      }
+    }
+    
+    // 现在确保有当前对话，发送消息
+    if (appState.currentConversation != null) {
+      await appState.sendMessage(message, _selectedModel);
     } else {
-      appState.sendMessage(message, _selectedModel);
+      Log.e('创建对话后仍然没有当前对话');
     }
 
     _messageController.clear();
     _scrollToBottom();
+    Log.exit('ChatPage._sendMessage');
   }
 
   void _selectConversation(Conversation conversation) {
+    Log.enter('ChatPage._selectConversation');
     context.read<AppState>().selectConversation(conversation);
+    Log.business('用户选择对话', {'conversationId': conversation.id, 'title': conversation.title});
     Navigator.pop(context); // 关闭抽屉
+    Log.exit('ChatPage._selectConversation');
   }
 
   @override
@@ -78,22 +103,26 @@ class _ChatPageState extends State<ChatPage> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'new_chat') {
-                context.read<AppState>().createNewConversation();
-                             } else if (value == 'clear') {
-                 // 清空当前对话
-                 context.read<AppState>().selectConversation(
-                   Conversation(
-                     id: '',
-                     title: '',
-                     model: '',
-                     service: '',
-                     createdAt: DateTime.now(),
-                     updatedAt: DateTime.now(),
-                   ),
-                 );
-               }
+                try {
+                  await context.read<AppState>().createNewConversation();
+                } catch (e) {
+                  Log.e('创建新对话失败', e);
+                }
+              } else if (value == 'clear') {
+                // 清空当前对话
+                context.read<AppState>().selectConversation(
+                  Conversation(
+                    id: '',
+                    title: '',
+                    model: '',
+                    service: '',
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  ),
+                );
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
@@ -244,15 +273,15 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                         maxLines: null,
                         textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _sendMessage(),
+                        onSubmitted: (_) async => await _sendMessage(),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: _sendMessage,
-                      icon: const Icon(Icons.send),
-                      color: AppTheme.primaryColor,
-                    ),
+                                         IconButton(
+                       onPressed: () async => await _sendMessage(),
+                       icon: const Icon(Icons.send),
+                       color: AppTheme.primaryColor,
+                     ),
                   ],
                 ),
               ),
@@ -298,9 +327,14 @@ class _ChatPageState extends State<ChatPage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AppState>().createNewConversation();
-                    Navigator.pop(context); // 关闭抽屉
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    try {
+                      await context.read<AppState>().createNewConversation();
+                      navigator.pop(); // 关闭抽屉
+                    } catch (e) {
+                      Log.e('创建新对话失败', e);
+                    }
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('新建对话'),
@@ -377,8 +411,12 @@ class _ChatPageState extends State<ChatPage> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () {
-              context.read<AppState>().createNewConversation();
+            onPressed: () async {
+              try {
+                await context.read<AppState>().createNewConversation();
+              } catch (e) {
+                Log.e('创建新对话失败', e);
+              }
             },
             icon: const Icon(Icons.add),
             label: const Text('新建对话'),

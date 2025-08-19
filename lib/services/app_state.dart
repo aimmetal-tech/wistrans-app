@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/conversation.dart';
 import '../models/news.dart';
 import 'api_service.dart';
+import '../utils/log.dart';
 
 class AppState extends ChangeNotifier {
   // 当前选中的底部导航索引
@@ -39,12 +40,16 @@ class AppState extends ChangeNotifier {
 
   // 设置当前导航索引
   void setCurrentIndex(int index) {
+    Log.enter('AppState.setCurrentIndex');
     _currentIndex = index;
+    Log.business('切换导航页面', {'index': index});
     notifyListeners();
+    Log.exit('AppState.setCurrentIndex');
   }
 
   // 对话相关方法
   Future<void> createNewConversation() async {
+    Log.enter('AppState.createNewConversation');
     try {
       _isLoadingConversation = true;
       _conversationError = null;
@@ -57,15 +62,20 @@ class AppState extends ChangeNotifier {
       _currentConversation = conversation;
       
       _isLoadingConversation = false;
+      Log.business('创建新对话成功', {'conversationId': conversationId});
       notifyListeners();
-    } catch (e) {
+      Log.exit('AppState.createNewConversation');
+    } catch (e, stackTrace) {
       _isLoadingConversation = false;
       _conversationError = e.toString();
+      Log.e('创建新对话失败', e, stackTrace);
       notifyListeners();
+      Log.exit('AppState.createNewConversation');
     }
   }
 
   Future<void> loadConversationHistory(String conversationId) async {
+    Log.enter('AppState.loadConversationHistory');
     try {
       _isLoadingConversation = true;
       _conversationError = null;
@@ -95,18 +105,33 @@ class AppState extends ChangeNotifier {
       
       _currentConversation = updatedConversation;
       _isLoadingConversation = false;
+      Log.business('加载对话历史成功', {'conversationId': conversationId, 'messageCount': messages.length});
       notifyListeners();
-    } catch (e) {
+      Log.exit('AppState.loadConversationHistory');
+    } catch (e, stackTrace) {
       _isLoadingConversation = false;
       _conversationError = e.toString();
+      Log.e('加载对话历史失败', e, stackTrace);
       notifyListeners();
+      Log.exit('AppState.loadConversationHistory');
     }
   }
 
   Future<void> sendMessage(String message, String model) async {
-    if (_currentConversation == null) return;
+    Log.enter('AppState.sendMessage');
+    if (_currentConversation == null) {
+      Log.w('尝试发送消息但当前没有选中的对话');
+      Log.exit('AppState.sendMessage');
+      return;
+    }
 
     try {
+      Log.business('开始发送消息', {
+        'conversationId': _currentConversation!.id,
+        'model': model,
+        'messageLength': message.length,
+      });
+
       // 添加用户消息
       final userMessage = Message(
         id: _currentConversation!.messages.length + 1,
@@ -167,9 +192,17 @@ class AppState extends ChangeNotifier {
         _updateConversationInList(finalConversation);
         notifyListeners();
       }
-    } catch (e) {
+
+      Log.business('消息发送完成', {
+        'conversationId': _currentConversation!.id,
+        'responseLength': fullResponse.length,
+      });
+      Log.exit('AppState.sendMessage');
+    } catch (e, stackTrace) {
       _conversationError = e.toString();
+      Log.e('发送消息失败', e, stackTrace);
       notifyListeners();
+      Log.exit('AppState.sendMessage');
     }
   }
 
@@ -183,12 +216,16 @@ class AppState extends ChangeNotifier {
   }
 
   void selectConversation(Conversation conversation) {
+    Log.enter('AppState.selectConversation');
     _currentConversation = conversation;
+    Log.business('选择对话', {'conversationId': conversation.id, 'title': conversation.title});
     notifyListeners();
+    Log.exit('AppState.selectConversation');
   }
 
   // 新闻相关方法
   Future<void> fetchAndTranslateNews() async {
+    Log.enter('AppState.fetchAndTranslateNews');
     try {
       _isLoadingNews = true;
       _newsError = null;
@@ -225,27 +262,40 @@ class AppState extends ChangeNotifier {
 
       _newsList.insert(0, translatedNews);
       _isLoadingNews = false;
+      Log.business('获取并翻译新闻成功', {
+        'newsTitle': news.title,
+        'translatedTitle': translatedTitle,
+      });
       notifyListeners();
-    } catch (e) {
+      Log.exit('AppState.fetchAndTranslateNews');
+    } catch (e, stackTrace) {
       _isLoadingNews = false;
       _newsError = e.toString();
+      Log.e('获取并翻译新闻失败', e, stackTrace);
       notifyListeners();
+      Log.exit('AppState.fetchAndTranslateNews');
     }
   }
 
   // 用户相关方法
   void setUserInfo(String username, String userId) {
+    Log.enter('AppState.setUserInfo');
     _username = username;
     _userId = userId;
     _isLoggedIn = true;
+    Log.business('用户登录', {'username': username, 'userId': userId});
     notifyListeners();
+    Log.exit('AppState.setUserInfo');
   }
 
   void logout() {
+    Log.enter('AppState.logout');
     _username = null;
     _userId = null;
     _isLoggedIn = false;
+    Log.business('用户登出');
     notifyListeners();
+    Log.exit('AppState.logout');
   }
 
   // 清除错误信息

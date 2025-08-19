@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/conversation.dart';
 import '../models/news.dart';
+import '../utils/log.dart';
 
 class ApiService {
   static const String goBaseUrl = 'http://localhost:8080';
@@ -9,76 +10,121 @@ class ApiService {
 
   // Go API 服务
   static Future<Map<String, dynamic>> checkHealth() async {
+    Log.enter('ApiService.checkHealth');
     try {
+      Log.network('GET', '$goBaseUrl/health');
       final response = await http.get(Uri.parse('$goBaseUrl/health'));
+      Log.network('GET', '$goBaseUrl/health', null, response.body);
+      
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final result = json.decode(response.body);
+        Log.i('健康检查成功');
+        Log.exit('ApiService.checkHealth');
+        return result;
       } else {
         throw Exception('健康检查失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('健康检查失败', e, stackTrace);
+      Log.exit('ApiService.checkHealth');
       throw Exception('网络请求失败: $e');
     }
   }
 
   static Future<String> createConversation() async {
+    Log.enter('ApiService.createConversation');
     try {
+      Log.network('GET', '$goBaseUrl/conversations');
       final response = await http.get(Uri.parse('$goBaseUrl/conversations'));
+      Log.network('GET', '$goBaseUrl/conversations', null, response.body);
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['id'];
+        final conversationId = data['conversation_id'] ?? data['id'] ?? '';
+        Log.business('创建会话成功', {'id': conversationId});
+        Log.exit('ApiService.createConversation');
+        return conversationId;
       } else {
         throw Exception('创建会话失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('创建会话失败', e, stackTrace);
+      Log.exit('ApiService.createConversation');
       throw Exception('网络请求失败: $e');
     }
   }
 
   static Future<Conversation> getConversationDetail(String id) async {
+    Log.enter('ApiService.getConversationDetail');
     try {
-      final response = await http.get(
-        Uri.parse('$goBaseUrl/conversations/detail?id=$id'),
-      );
+      final url = '$goBaseUrl/conversations/detail?id=$id';
+      Log.network('GET', url);
+      final response = await http.get(Uri.parse(url));
+      Log.network('GET', url, null, response.body);
+      
       if (response.statusCode == 200) {
-        return Conversation.fromJson(json.decode(response.body));
+        final conversation = Conversation.fromJson(json.decode(response.body));
+        Log.business('获取会话详情成功', {'id': id});
+        Log.exit('ApiService.getConversationDetail');
+        return conversation;
       } else {
         throw Exception('获取会话详情失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('获取会话详情失败', e, stackTrace);
+      Log.exit('ApiService.getConversationDetail');
       throw Exception('网络请求失败: $e');
     }
   }
 
   static Future<List<Message>> getConversationHistory(String id) async {
+    Log.enter('ApiService.getConversationHistory');
     try {
-      final response = await http.get(
-        Uri.parse('$goBaseUrl/conversations/history?id=$id'),
-      );
+      final url = '$goBaseUrl/conversations/history?id=$id';
+      Log.network('GET', url);
+      final response = await http.get(Uri.parse(url));
+      Log.network('GET', url, null, response.body);
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return (data['messages'] as List<dynamic>)
+        final messages = (data['messages'] as List<dynamic>)
             .map((e) => Message.fromJson(e))
             .toList();
+        Log.business('获取会话历史成功', {'id': id, 'messageCount': messages.length});
+        Log.exit('ApiService.getConversationHistory');
+        return messages;
       } else {
         throw Exception('获取会话历史失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('获取会话历史失败', e, stackTrace);
+      Log.exit('ApiService.getConversationHistory');
       throw Exception('网络请求失败: $e');
     }
   }
 
   static Future<void> updateConversation(String id, String title) async {
+    Log.enter('ApiService.updateConversation');
     try {
+      final url = '$goBaseUrl/conversations/$id';
+      final body = {'title': title};
+      Log.network('PATCH', url, body);
       final response = await http.patch(
-        Uri.parse('$goBaseUrl/conversations/$id'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'title': title}),
+        body: json.encode(body),
       );
-      if (response.statusCode != 200) {
+      Log.network('PATCH', url, body, response.body);
+      
+      if (response.statusCode == 200) {
+        Log.business('更新会话成功', {'id': id, 'title': title});
+        Log.exit('ApiService.updateConversation');
+      } else {
         throw Exception('更新会话失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('更新会话失败', e, stackTrace);
+      Log.exit('ApiService.updateConversation');
       throw Exception('网络请求失败: $e');
     }
   }
@@ -88,6 +134,7 @@ class ApiService {
     String input,
     String model,
   ) async* {
+    Log.enter('ApiService.streamConversation');
     try {
       final uri = Uri.parse('$goBaseUrl/conversations/stream')
           .replace(queryParameters: {
@@ -95,6 +142,8 @@ class ApiService {
         'input': input,
         'model': model,
       });
+
+      Log.network('GET', uri.toString(), {'id': id, 'input': input, 'model': model});
 
       final request = http.Request('GET', uri);
       request.headers['Accept'] = 'text/event-stream';
@@ -105,6 +154,8 @@ class ApiService {
       if (streamedResponse.statusCode != 200) {
         throw Exception('流式对话失败: ${streamedResponse.statusCode}');
       }
+
+      Log.business('开始流式对话', {'id': id, 'model': model});
 
       String buffer = '';
       await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
@@ -132,13 +183,19 @@ class ApiService {
                 }
               } catch (e) {
                 // 忽略JSON解析错误
+                Log.d('SSE数据解析错误', e);
               }
             }
           }
           // 忽略空行和其他不相关的行
         }
       }
-    } catch (e) {
+      
+      Log.business('流式对话完成', {'id': id});
+      Log.exit('ApiService.streamConversation');
+    } catch (e, stackTrace) {
+      Log.e('流式对话失败', e, stackTrace);
+      Log.exit('ApiService.streamConversation');
       throw Exception('流式对话失败: $e');
     }
   }
@@ -150,24 +207,34 @@ class ApiService {
     int maxLength = 5000,
     List<String>? extractFields,
   }) async {
+    Log.enter('ApiService.fetchNews');
     try {
+      final body = {
+        'url': url,
+        'content_type': contentType,
+        'language': language,
+        'max_length': maxLength,
+        'extract_fields': extractFields,
+      };
+      Log.network('POST', '$goBaseUrl/fetch', body);
       final response = await http.post(
         Uri.parse('$goBaseUrl/fetch'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'url': url,
-          'content_type': contentType,
-          'language': language,
-          'max_length': maxLength,
-          'extract_fields': extractFields,
-        }),
+        body: json.encode(body),
       );
+      Log.network('POST', '$goBaseUrl/fetch', body, response.body);
+      
       if (response.statusCode == 200) {
-        return News.fromJson(json.decode(response.body));
+        final news = News.fromJson(json.decode(response.body));
+        Log.business('获取新闻成功', {'url': url, 'contentType': contentType});
+        Log.exit('ApiService.fetchNews');
+        return news;
       } else {
         throw Exception('获取新闻失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('获取新闻失败', e, stackTrace);
+      Log.exit('ApiService.fetchNews');
       throw Exception('网络请求失败: $e');
     }
   }
@@ -178,28 +245,40 @@ class ApiService {
     required List<Map<String, String>> segments,
     Map<String, dynamic>? extraArgs,
   }) async {
+    Log.enter('ApiService.translateText');
     try {
+      final body = {
+        'target': target,
+        'segments': segments,
+        'extra_args': extraArgs,
+      };
+      Log.network('POST', '$pythonBaseUrl/translate', body);
       final response = await http.post(
         Uri.parse('$pythonBaseUrl/translate'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'target': target,
-          'segments': segments,
-          'extra_args': extraArgs,
-        }),
+        body: json.encode(body),
       );
+      Log.network('POST', '$pythonBaseUrl/translate', body, response.body);
+      
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final result = json.decode(response.body);
+        Log.business('文本翻译成功', {'target': target, 'segmentsCount': segments.length});
+        Log.exit('ApiService.translateText');
+        return result;
       } else {
         throw Exception('翻译失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('文本翻译失败', e, stackTrace);
+      Log.exit('ApiService.translateText');
       throw Exception('网络请求失败: $e');
     }
   }
 
   static Future<Map<String, dynamic>> ocrImage(String imagePath) async {
+    Log.enter('ApiService.ocrImage');
     try {
+      Log.network('POST', '$pythonBaseUrl/ocr', {'imagePath': imagePath});
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$pythonBaseUrl/ocr'),
@@ -211,13 +290,19 @@ class ApiService {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+      Log.network('POST', '$pythonBaseUrl/ocr', {'imagePath': imagePath}, response.body);
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final result = json.decode(response.body);
+        Log.business('OCR识别成功', {'imagePath': imagePath});
+        Log.exit('ApiService.ocrImage');
+        return result;
       } else {
         throw Exception('OCR识别失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('OCR识别失败', e, stackTrace);
+      Log.exit('ApiService.ocrImage');
       throw Exception('网络请求失败: $e');
     }
   }
@@ -228,7 +313,18 @@ class ApiService {
     String model = 'qwen-turbo-latest',
     Map<String, dynamic>? extraArgs,
   }) async {
+    Log.enter('ApiService.ocrTranslate');
     try {
+      final fields = {
+        'target': target,
+        'model': model,
+        'imagePath': imagePath,
+      };
+      if (extraArgs != null) {
+        fields['extra_args'] = json.encode(extraArgs);
+      }
+      Log.network('POST', '$pythonBaseUrl/translate/ocr', fields);
+      
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$pythonBaseUrl/translate/ocr'),
@@ -246,13 +342,19 @@ class ApiService {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+      Log.network('POST', '$pythonBaseUrl/translate/ocr', fields, response.body);
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final result = json.decode(response.body);
+        Log.business('OCR翻译成功', {'imagePath': imagePath, 'target': target, 'model': model});
+        Log.exit('ApiService.ocrTranslate');
+        return result;
       } else {
         throw Exception('OCR翻译失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('OCR翻译失败', e, stackTrace);
+      Log.exit('ApiService.ocrTranslate');
       throw Exception('网络请求失败: $e');
     }
   }
@@ -263,24 +365,34 @@ class ApiService {
     String model = 'qwen-turbo-latest',
     Map<String, dynamic>? extraArgs,
   }) async {
+    Log.enter('ApiService.translateWords');
     try {
+      final body = {
+        'word': words,
+        'target': target,
+        'model': model,
+        'extra_args': extraArgs,
+      };
+      Log.network('POST', '$pythonBaseUrl/trans-word', body);
       final response = await http.post(
         Uri.parse('$pythonBaseUrl/trans-word'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'word': words,
-          'target': target,
-          'model': model,
-          'extra_args': extraArgs,
-        }),
+        body: json.encode(body),
       );
+      Log.network('POST', '$pythonBaseUrl/trans-word', body, response.body);
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return List<Map<String, String>>.from(data['translated_word']);
+        final result = List<Map<String, String>>.from(data['translated_word']);
+        Log.business('单词翻译成功', {'target': target, 'wordsCount': words.length});
+        Log.exit('ApiService.translateWords');
+        return result;
       } else {
         throw Exception('单词翻译失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('单词翻译失败', e, stackTrace);
+      Log.exit('ApiService.translateWords');
       throw Exception('网络请求失败: $e');
     }
   }
@@ -289,21 +401,30 @@ class ApiService {
     required String text,
     Map<String, dynamic>? extraArgs,
   }) async {
+    Log.enter('ApiService.textToSpeech');
     try {
+      final body = {
+        'full_text': text,
+        'extra_args': extraArgs,
+      };
+      Log.network('POST', '$pythonBaseUrl/tts', body);
       final response = await http.post(
         Uri.parse('$pythonBaseUrl/tts'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'full_text': text,
-          'extra_args': extraArgs,
-        }),
+        body: json.encode(body),
       );
+      Log.network('POST', '$pythonBaseUrl/tts', body, '${response.bodyBytes.length} bytes');
+      
       if (response.statusCode == 200) {
+        Log.business('文本转语音成功', {'textLength': text.length});
+        Log.exit('ApiService.textToSpeech');
         return response.bodyBytes;
       } else {
         throw Exception('文本转语音失败: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Log.e('文本转语音失败', e, stackTrace);
+      Log.exit('ApiService.textToSpeech');
       throw Exception('网络请求失败: $e');
     }
   }

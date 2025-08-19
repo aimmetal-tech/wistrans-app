@@ -19,7 +19,7 @@ class Conversation {
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
-      id: json['id'] ?? '',
+      id: json['conversation_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
       model: json['model'] ?? '',
       service: json['service'] ?? '',
