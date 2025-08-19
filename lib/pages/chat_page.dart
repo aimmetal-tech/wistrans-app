@@ -18,6 +18,11 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   String _selectedModel = 'qwen-turbo-latest';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  // 联网搜索相关状态
+  bool _isWebSearchEnabled = false;
+  bool _isAutoSearchEnabled = false;
+  bool _isSearchPanelExpanded = false;
 
   @override
   void dispose() {
@@ -41,6 +46,30 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  void _toggleSearchPanel() {
+    setState(() {
+      _isSearchPanelExpanded = !_isSearchPanelExpanded;
+    });
+    Log.i('Search panel ${_isSearchPanelExpanded ? 'expanded' : 'collapsed'}');
+  }
+
+  void _onWebSearchChanged(bool value) {
+    setState(() {
+      _isWebSearchEnabled = value;
+      if (!value) {
+        _isAutoSearchEnabled = false;
+      }
+    });
+    Log.i('Search mode changed: ${value ? 'enabled' : 'disabled'}');
+  }
+
+  void _onAutoSearchChanged(bool value) {
+    setState(() {
+      _isAutoSearchEnabled = value;
+    });
+    Log.i('Search mode changed: ${value ? 'auto' : 'manual'}');
+  }
+
   Future<void> _sendMessage() async {
     Log.enter('ChatPage._sendMessage');
     final message = _messageController.text.trim();
@@ -51,7 +80,12 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     final appState = context.read<AppState>();
-    Log.business('用户发送消息', {'messageLength': message.length, 'model': _selectedModel});
+    Log.business('用户发送消息', {
+      'messageLength': message.length, 
+      'model': _selectedModel,
+      'webSearchEnabled': _isWebSearchEnabled,
+      'autoSearchEnabled': _isAutoSearchEnabled,
+    });
     
     // 如果没有当前对话，先创建一个新的
     if (appState.currentConversation == null) {
@@ -201,6 +235,121 @@ class _ChatPageState extends State<ChatPage> {
                         },
                       ),
                     ),
+                  ],
+                ),
+              ),
+              
+              // 联网搜索控制面板
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceColor,
+                  boxShadow: AppTheme.defaultShadow,
+                ),
+                child: Column(
+                  children: [
+                    // 主开关行
+                    Row(
+                      children: [
+                        const Icon(Icons.search, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        const Text('联网搜索'),
+                        const Spacer(),
+                        Switch(
+                          value: _isWebSearchEnabled,
+                          onChanged: _onWebSearchChanged,
+                          activeThumbColor: AppTheme.primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(
+                            _isSearchPanelExpanded 
+                                ? Icons.expand_less 
+                                : Icons.expand_more,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                          onPressed: _isWebSearchEnabled ? _toggleSearchPanel : null,
+                        ),
+                      ],
+                    ),
+                    
+                    // 展开的子选项
+                    if (_isWebSearchEnabled && _isSearchPanelExpanded) ...[
+                      const Divider(height: 16),
+                      Row(
+                        children: [
+                          const SizedBox(width: 32),
+                          const Text('搜索模式:'),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Radio<bool>(
+                                        value: true,
+                                        groupValue: _isAutoSearchEnabled,
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            _onAutoSearchChanged(value);
+                                          }
+                                        },
+                                      ),
+                                      const Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('自动搜索'),
+                                            Text(
+                                              'AI自动决定是否搜索',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondaryColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Radio<bool>(
+                                        value: false,
+                                        groupValue: _isAutoSearchEnabled,
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            _onAutoSearchChanged(value);
+                                          }
+                                        },
+                                      ),
+                                      const Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('手动搜索'),
+                                            Text(
+                                              '用户手动触发搜索',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondaryColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

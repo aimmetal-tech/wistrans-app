@@ -5,6 +5,7 @@ import '../style/app_theme.dart';
 import 'notes_page.dart';
 import 'home_page.dart';
 import 'chat_page.dart';
+import 'vocabulary_page.dart';
 import 'profile_page.dart';
 
 class MainAppPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _MainAppPageState extends State<MainAppPage> {
     const NotesPage(),
     const HomePage(),
     const ChatPage(),
+    const VocabularyPage(),
     const ProfilePage(),
   ];
 
@@ -32,7 +34,6 @@ class _MainAppPageState extends State<MainAppPage> {
             children: _pages,
           ),
           bottomNavigationBar: BottomNavigationBar(
-            
             currentIndex: appState.currentIndex,
             onTap: (index) {
               appState.setCurrentIndex(index);
@@ -54,6 +55,10 @@ class _MainAppPageState extends State<MainAppPage> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble),
                 label: '对话',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.book),
+                label: '生词本',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),

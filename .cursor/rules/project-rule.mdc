@@ -1,9 +1,6 @@
 ---
-description:
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
-
 # 项目规则
 
 ## 代码框架

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/conversation.dart';
 import '../models/news.dart';
+import '../models/user.dart';
+import '../models/word_record.dart';
 import 'api_service.dart';
 import '../utils/log.dart';
 
@@ -31,12 +33,23 @@ class AppState extends ChangeNotifier {
 
   // 用户相关状态
   bool _isLoggedIn = false;
-  String? _username;
-  String? _userId;
+  User? _currentUser;
+  bool _isLoadingAuth = false;
+  String? _authError;
 
   bool get isLoggedIn => _isLoggedIn;
-  String? get username => _username;
-  String? get userId => _userId;
+  User? get currentUser => _currentUser;
+  bool get isLoadingAuth => _isLoadingAuth;
+  String? get authError => _authError;
+
+  // 单词记录相关状态
+  final List<WordRecord> _wordRecords = [];
+  bool _isLoadingWordRecords = false;
+  String? _wordRecordsError;
+
+  List<WordRecord> get wordRecords => _wordRecords;
+  bool get isLoadingWordRecords => _isLoadingWordRecords;
+  String? get wordRecordsError => _wordRecordsError;
 
   // 设置当前导航索引
   void setCurrentIndex(int index) {
@@ -45,6 +58,155 @@ class AppState extends ChangeNotifier {
     Log.business('切换导航页面', {'index': index});
     notifyListeners();
     Log.exit('AppState.setCurrentIndex');
+  }
+
+  // 用户认证相关方法
+  Future<void> registerUser({
+    required String username,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    Log.enter('AppState.registerUser');
+    try {
+      _isLoadingAuth = true;
+      _authError = null;
+      notifyListeners();
+
+      Log.i('Register request: $username');
+      final result = await ApiService.registerUser(
+        username: username,
+        password: password,
+        confirmPassword: confirmPassword,
+      );
+
+      final user = User.fromJson(result);
+      _currentUser = user;
+      _isLoggedIn = true;
+      
+      _isLoadingAuth = false;
+      Log.i('Register success: ${user.id}');
+      notifyListeners();
+      Log.exit('AppState.registerUser');
+    } catch (e, stackTrace) {
+      _isLoadingAuth = false;
+      _authError = e.toString();
+      Log.e('Register failed', e, stackTrace);
+      notifyListeners();
+      Log.exit('AppState.registerUser');
+    }
+  }
+
+  Future<void> loginUser({
+    required String username,
+    required String password,
+  }) async {
+    Log.enter('AppState.loginUser');
+    try {
+      _isLoadingAuth = true;
+      _authError = null;
+      notifyListeners();
+
+      Log.i('Login request: $username');
+      final result = await ApiService.loginUser(
+        username: username,
+        password: password,
+      );
+
+      final userData = result['user'] as Map<String, dynamic>;
+      final user = User.fromJson(userData);
+      _currentUser = user;
+      _isLoggedIn = true;
+      
+      _isLoadingAuth = false;
+      Log.i('Login success: ${user.id}');
+      notifyListeners();
+      Log.exit('AppState.loginUser');
+    } catch (e, stackTrace) {
+      _isLoadingAuth = false;
+      _authError = e.toString();
+      Log.e('Login failed', e, stackTrace);
+      notifyListeners();
+      Log.exit('AppState.loginUser');
+    }
+  }
+
+  void logout() {
+    Log.enter('AppState.logout');
+    _currentUser = null;
+    _isLoggedIn = false;
+    _wordRecords.clear();
+    Log.business('用户登出');
+    notifyListeners();
+    Log.exit('AppState.logout');
+  }
+
+  // 单词记录相关方法
+  Future<void> loadWordRecords() async {
+    Log.enter('AppState.loadWordRecords');
+    if (_currentUser == null) {
+      Log.w('尝试加载单词记录但用户未登录');
+      Log.exit('AppState.loadWordRecords');
+      return;
+    }
+
+    try {
+      _isLoadingWordRecords = true;
+      _wordRecordsError = null;
+      notifyListeners();
+
+      final result = await ApiService.getWordRecords(
+        userId: _currentUser!.id,
+        limit: 100,
+        offset: 0,
+      );
+
+      final records = (result['records'] as List<dynamic>)
+          .map((e) => WordRecord.fromJson(e))
+          .toList();
+
+      _wordRecords.clear();
+      _wordRecords.addAll(records);
+      
+      _isLoadingWordRecords = false;
+      Log.i('Fetched vocabulary: ${records.length}');
+      notifyListeners();
+      Log.exit('AppState.loadWordRecords');
+    } catch (e, stackTrace) {
+      _isLoadingWordRecords = false;
+      _wordRecordsError = e.toString();
+      Log.e('加载单词记录失败', e, stackTrace);
+      notifyListeners();
+      Log.exit('AppState.loadWordRecords');
+    }
+  }
+
+  Future<void> recordWord({
+    required String text,
+    String targetLanguage = '中文',
+    String modelName = 'qwen-turbo-latest',
+  }) async {
+    Log.enter('AppState.recordWord');
+    if (_currentUser == null) {
+      Log.w('尝试记录单词但用户未登录');
+      Log.exit('AppState.recordWord');
+      return;
+    }
+
+    try {
+      await ApiService.recordWord(
+        userId: _currentUser!.id,
+        text: text,
+        targetLanguage: targetLanguage,
+        modelName: modelName,
+      );
+
+      // 重新加载单词记录
+      await loadWordRecords();
+      Log.exit('AppState.recordWord');
+    } catch (e, stackTrace) {
+      Log.e('记录单词失败', e, stackTrace);
+      Log.exit('AppState.recordWord');
+    }
   }
 
   // 对话相关方法
@@ -277,25 +439,25 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // 用户相关方法
-  void setUserInfo(String username, String userId) {
-    Log.enter('AppState.setUserInfo');
-    _username = username;
-    _userId = userId;
-    _isLoggedIn = true;
-    Log.business('用户登录', {'username': username, 'userId': userId});
-    notifyListeners();
-    Log.exit('AppState.setUserInfo');
-  }
-
-  void logout() {
-    Log.enter('AppState.logout');
-    _username = null;
-    _userId = null;
-    _isLoggedIn = false;
-    Log.business('用户登出');
-    notifyListeners();
-    Log.exit('AppState.logout');
+  // TTS相关方法
+  Future<List<int>?> generateTTS(String text) async {
+    Log.enter('AppState.generateTTS');
+    try {
+      Log.business('开始生成TTS', {'textLength': text.length});
+      
+      final audioBytes = await ApiService.textToSpeech(
+        text: text,
+        extraArgs: {'style': '新闻播报'},
+      );
+      
+      Log.business('TTS生成成功', {'audioSize': audioBytes.length});
+      Log.exit('AppState.generateTTS');
+      return audioBytes;
+    } catch (e, stackTrace) {
+      Log.e('TTS生成失败', e, stackTrace);
+      Log.exit('AppState.generateTTS');
+      return null;
+    }
   }
 
   // 清除错误信息

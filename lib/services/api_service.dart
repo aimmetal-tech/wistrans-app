@@ -428,4 +428,138 @@ class ApiService {
       throw Exception('网络请求失败: $e');
     }
   }
+
+  // 用户认证相关API
+  static Future<Map<String, dynamic>> registerUser({
+    required String username,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    Log.enter('ApiService.registerUser');
+    try {
+      final body = {
+        'username': username,
+        'password': password,
+        'confirm_password': confirmPassword,
+      };
+      Log.network('POST', '$pythonBaseUrl/user/register', body);
+      final response = await http.post(
+        Uri.parse('$pythonBaseUrl/user/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+      Log.network('POST', '$pythonBaseUrl/user/register', body, response.body);
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        Log.business('用户注册成功', {'username': username});
+        Log.exit('ApiService.registerUser');
+        return result;
+      } else {
+        throw Exception('用户注册失败: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Log.e('用户注册失败', e, stackTrace);
+      Log.exit('ApiService.registerUser');
+      throw Exception('网络请求失败: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> loginUser({
+    required String username,
+    required String password,
+  }) async {
+    Log.enter('ApiService.loginUser');
+    try {
+      final body = {
+        'username': username,
+        'password': password,
+      };
+      Log.network('POST', '$pythonBaseUrl/user/login', body);
+      final response = await http.post(
+        Uri.parse('$pythonBaseUrl/user/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+      Log.network('POST', '$pythonBaseUrl/user/login', body, response.body);
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        Log.business('用户登录成功', {'username': username});
+        Log.exit('ApiService.loginUser');
+        return result;
+      } else {
+        throw Exception('用户登录失败: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Log.e('用户登录失败', e, stackTrace);
+      Log.exit('ApiService.loginUser');
+      throw Exception('网络请求失败: $e');
+    }
+  }
+
+  // 单词记录相关API
+  static Future<Map<String, dynamic>> recordWord({
+    required String userId,
+    required String text,
+    String targetLanguage = '中文',
+    String modelName = 'qwen-turbo-latest',
+  }) async {
+    Log.enter('ApiService.recordWord');
+    try {
+      final body = {
+        'user_id': userId,
+        'text': text,
+        'target_language': targetLanguage,
+        'model_name': modelName,
+      };
+      Log.network('POST', '$pythonBaseUrl/word/record', body);
+      final response = await http.post(
+        Uri.parse('$pythonBaseUrl/word/record'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+      Log.network('POST', '$pythonBaseUrl/word/record', body, response.body);
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        Log.business('单词记录成功', {'userId': userId, 'text': text});
+        Log.exit('ApiService.recordWord');
+        return result;
+      } else {
+        throw Exception('单词记录失败: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Log.e('单词记录失败', e, stackTrace);
+      Log.exit('ApiService.recordWord');
+      throw Exception('网络请求失败: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getWordRecords({
+    required String userId,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    Log.enter('ApiService.getWordRecords');
+    try {
+      final url = '$pythonBaseUrl/word/records/$userId?limit=$limit&offset=$offset';
+      Log.network('GET', url);
+      final response = await http.get(Uri.parse(url));
+      Log.network('GET', url, null, response.body);
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        Log.business('获取单词记录成功', {'userId': userId, 'limit': limit, 'offset': offset});
+        Log.exit('ApiService.getWordRecords');
+        return result;
+      } else {
+        throw Exception('获取单词记录失败: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Log.e('获取单词记录失败', e, stackTrace);
+      Log.exit('ApiService.getWordRecords');
+      throw Exception('网络请求失败: $e');
+    }
+  }
 }

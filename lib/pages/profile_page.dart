@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../style/app_theme.dart';
+import '../utils/log.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    Log.enter('ProfilePage.build');
+    final app = Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('我的'),
@@ -40,7 +42,7 @@ class ProfilePage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                appState.username ?? '未登录用户',
+                                appState.currentUser?.username ?? '未登录用户',
                                 style: Theme.of(context).textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 8),
@@ -70,7 +72,7 @@ class ProfilePage extends StatelessWidget {
                         title: '翻译工具',
                         subtitle: '文本翻译、OCR翻译、单词翻译',
                         onTap: () {
-                          // TODO: 导航到翻译工具页面
+                          Log.business('点击翻译工具菜单');
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('翻译工具功能开发中...')),
                           );
@@ -83,7 +85,7 @@ class ProfilePage extends StatelessWidget {
                         title: '语音合成',
                         subtitle: '文本转语音功能',
                         onTap: () {
-                          // TODO: 导航到语音合成页面
+                          Log.business('点击语音合成菜单');
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('语音合成功能开发中...')),
                           );
@@ -96,7 +98,7 @@ class ProfilePage extends StatelessWidget {
                         title: '应用设置',
                         subtitle: '主题、语言、通知设置',
                         onTap: () {
-                          // TODO: 导航到设置页面
+                          Log.business('点击应用设置菜单');
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('设置功能开发中...')),
                           );
@@ -141,9 +143,9 @@ class ProfilePage extends StatelessWidget {
                             Expanded(
                               child: _buildStatItem(
                                 context,
-                                icon: Icons.note,
-                                title: '笔记数量',
-                                value: '0', // TODO: 从笔记页面获取数量
+                                icon: Icons.book,
+                                title: '单词记录',
+                                value: '${appState.wordRecords.length}',
                               ),
                             ),
                           ],
@@ -200,6 +202,7 @@ class ProfilePage extends StatelessWidget {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
+                        Log.business('用户点击退出登录');
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
@@ -207,13 +210,19 @@ class ProfilePage extends StatelessWidget {
                             content: const Text('确定要退出登录吗？'),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
+                                onPressed: () {
+                                  Log.business('用户取消退出登录');
+                                  Navigator.of(context).pop();
+                                },
                                 child: const Text('取消'),
                               ),
                               ElevatedButton(
                                 onPressed: () {
+                                  Log.business('用户确认退出登录');
                                   appState.logout();
                                   Navigator.of(context).pop();
+                                  // 退出登录后跳转到登录页面
+                                  Navigator.of(context).pushReplacementNamed('/login');
                                 },
                                 child: const Text('确定'),
                               ),
@@ -235,6 +244,9 @@ class ProfilePage extends StatelessWidget {
         },
       ),
     );
+    
+    Log.exit('ProfilePage.build');
+    return app;
   }
 
   Widget _buildMenuItem(
