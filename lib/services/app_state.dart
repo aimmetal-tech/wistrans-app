@@ -578,14 +578,14 @@ class AppState extends ChangeNotifier {
       // 构建请求体
       final requestBody = {
         'model': 'qwen-turbo-latest',  // 使用通义千问模型
-        'prompt': '你是一个新闻内容过滤助手。请帮我过滤以下新闻内容，只保留正文和相关图片，移除所有网站导航、目录、语言选择列表、网站图标、广告等非正文内容。保持正文的完整性和可读性。\n\n$content',
+        'prompt': '你是一个新闻内容过滤助手。请帮我过滤以下新闻内容，只保留正文和相关图片，移除所有网站导航、目录、语言选择列表、网站图标、广告等非正文内容。保持正文的完整性和可读性。<div>\n\n$content\n\n<\\div>。请直接返回过滤后的内容,不要添加任何额外的信息',
         'temperature': 0.1,  // 低温度以获得确定性输出
         'max_tokens': 4000,  // 限制输出长度
       };
       
       // 调用后端API
       final response = await http.post(
-        Uri.parse('${ApiService.pythonBaseUrl}/llm/generate'),
+        Uri.parse('${ApiService.pythonBaseUrl}/llm'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );

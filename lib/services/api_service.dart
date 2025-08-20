@@ -445,10 +445,26 @@ class ApiService {
       Log.network('POST', uri.toString(), null, response.body);
       
       if (response.statusCode == 200) {
-        final result = json.decode(response.body);
-        Log.business('爬取URL成功', {'url': url});
-        Log.exit('ApiService.crawlUrl');
-        return result;
+        // 检查响应内容类型，如果是HTML则直接返回HTML内容
+        final contentType = response.headers['content-type'] ?? '';
+        if (contentType.contains('text/html')) {
+          // 返回HTML内容
+          final result = {
+            'url': url,
+            'title': _extractTitleFromHtml(response.body),
+            'content': response.body,
+            'processed_content': response.body,
+          };
+          Log.business('爬取URL成功(HTML)', {'url': url});
+          Log.exit('ApiService.crawlUrl');
+          return result;
+        } else {
+          // 原有的JSON处理逻辑
+          final result = json.decode(response.body);
+          Log.business('爬取URL成功(JSON)', {'url': url});
+          Log.exit('ApiService.crawlUrl');
+          return result;
+        }
       } else {
         throw Exception('爬取URL失败: ${response.statusCode}');
       }
@@ -456,6 +472,18 @@ class ApiService {
       Log.e('爬取URL失败', e, stackTrace);
       Log.exit('ApiService.crawlUrl');
       throw Exception('网络请求失败: $e');
+    }
+  }
+
+  // 从HTML中提取标题的辅助方法
+  static String _extractTitleFromHtml(String html) {
+    try {
+      final RegExp titleRegExp = RegExp(r'<title>(.*?)</title>', caseSensitive: false);
+      final match = titleRegExp.firstMatch(html);
+      return match?.group(1)?.trim() ?? '未知标题';
+    } catch (e) {
+      Log.e('提取HTML标题失败', e);
+      return '未知标题';
     }
   }
 

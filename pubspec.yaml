@@ -62,6 +62,7 @@ dependencies:
   # 文件下载
   dio: ^5.3.2
   logger: ^2.6.1
+  flutter_html: ^3.0.0
 
 dev_dependencies:
   flutter_test:

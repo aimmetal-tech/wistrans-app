@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_html/flutter_html.dart';
 import '../models/news.dart';
 import '../style/app_theme.dart';
 import '../utils/log.dart';
@@ -128,28 +128,40 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
             const SizedBox(height: 16),
             
             // 新闻内容
-            MarkdownBody(
+            Html(
               data: _showOriginal || !widget.news.isTranslated
                 ? widget.news.originalNews.content 
                 : widget.news.translatedContent,
-              styleSheet: MarkdownStyleSheet(
-                p: Theme.of(context).textTheme.bodyMedium,
-                h1: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                h2: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                h3: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                strong: const TextStyle(fontWeight: FontWeight.bold),
-                blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      fontStyle: FontStyle.italic,
-                    ),
-              ),
-              selectable: true,
+              style: {
+                "body": Style(
+                  padding: HtmlPaddings.zero,
+                  margin: Margins.zero,
+                ),
+                "p": Style(
+                  padding: HtmlPaddings.zero,
+                  margin: Margins.zero,
+                  fontSize: FontSize.large,
+                ),
+                "h1": Style(
+                  fontWeight: FontWeight.bold,
+                  fontSize: FontSize.xxLarge,
+                ),
+                "h2": Style(
+                  fontWeight: FontWeight.bold,
+                  fontSize: FontSize.xLarge,
+                ),
+                "h3": Style(
+                  fontWeight: FontWeight.bold,
+                  fontSize: FontSize.large,
+                ),
+                "strong": Style(
+                  fontWeight: FontWeight.bold,
+                ),
+                "blockquote": Style(
+                  color: AppTheme.textSecondaryColor,
+                  fontStyle: FontStyle.italic,
+                ),
+              },
             ),
           ],
         ),
