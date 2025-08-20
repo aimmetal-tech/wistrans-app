@@ -73,12 +73,14 @@ class TranslatedNews {
   final String translatedTitle;
   final String translatedContent;
   final String translatedSummary;
+  final bool isTranslated; // 添加翻译状态标识
 
   TranslatedNews({
     required this.originalNews,
     required this.translatedTitle,
     required this.translatedContent,
     required this.translatedSummary,
+    this.isTranslated = false, // 默认未翻译
   });
 
   TranslatedNews copyWith({
@@ -86,12 +88,14 @@ class TranslatedNews {
     String? translatedTitle,
     String? translatedContent,
     String? translatedSummary,
+    bool? isTranslated,
   }) {
     return TranslatedNews(
       originalNews: originalNews ?? this.originalNews,
       translatedTitle: translatedTitle ?? this.translatedTitle,
       translatedContent: translatedContent ?? this.translatedContent,
       translatedSummary: translatedSummary ?? this.translatedSummary,
+      isTranslated: isTranslated ?? this.isTranslated,
     );
   }
 }

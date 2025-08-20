@@ -227,6 +227,15 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 16),
+                            
+                            // 不登录直接进入链接
+                            Center(
+                              child: TextButton(
+                                onPressed: _navigateToMain,
+                                child: const Text('不登录，直接进入'),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -242,5 +251,13 @@ class _LoginPageState extends State<LoginPage> {
     
     Log.exit('LoginPage.build');
     return app;
+  }
+  
+  // 跳转到主页
+  void _navigateToMain() {
+    Log.business('用户选择不登录直接进入应用');
+    // 设置访客模式
+    context.read<AppState>().setGuestMode();
+    Navigator.of(context).pushReplacementNamed('/main');
   }
 }

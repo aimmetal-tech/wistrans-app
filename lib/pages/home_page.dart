@@ -6,6 +6,7 @@ import '../services/app_state.dart';
 import '../models/news.dart';
 import '../style/app_theme.dart';
 import '../utils/log.dart';
+import 'news_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -203,6 +204,7 @@ class _HomePageState extends State<HomePage> {
                   onPlayTTS: _playTTS,
                   onStopTTS: _stopTTS,
                   isPlaying: _playingStates[news.originalNews.url] ?? false,
+                  onTranslate: (news) => context.read<AppState>().translateNews(news), // 传递翻译回调
                 );
               },
             ),
@@ -218,6 +220,7 @@ class NewsCard extends StatelessWidget {
   final Function(String, String) onPlayTTS;
   final VoidCallback onStopTTS;
   final bool isPlaying;
+  final Function(TranslatedNews) onTranslate; // 添加翻译回调
 
   const NewsCard({
     super.key,
@@ -225,159 +228,140 @@ class NewsCard extends StatelessWidget {
     required this.onPlayTTS,
     required this.onStopTTS,
     required this.isPlaying,
+    required this.onTranslate, // 添加翻译回调参数
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题部分
-            Row(
-              children: [
-                Icon(
-                  Icons.newspaper,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    news.translatedTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+      child: InkWell(
+        onTap: () {
+          // 跳转到新闻详情页面
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NewsDetailPage(news: news, onTranslate: onTranslate),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题部分
+              Row(
+                children: [
+                  Icon(
+                    Icons.newspaper,
+                    color: AppTheme.primaryColor,
+                    size: 20,
                   ),
-                ),
-                // TTS播放按钮
-                IconButton(
-                  onPressed: () {
-                    if (isPlaying) {
-                      onStopTTS();
-                    } else {
-                      onPlayTTS(news.originalNews.url, news.translatedTitle);
-                    }
-                  },
-                  icon: Icon(
-                    isPlaying ? Icons.stop : Icons.play_arrow,
-                    color: isPlaying ? AppTheme.errorColor : AppTheme.primaryColor,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      news.isTranslated ? news.translatedTitle : news.originalNews.title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  tooltip: isPlaying ? '停止播放' : '播放朗读',
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // 原文标题
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                news.originalNews.title,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // 摘要
-            Text(
-              news.translatedSummary,
-              style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            
-            // 原文摘要
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                news.originalNews.summary,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // 底部信息
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: AppTheme.textSecondaryColor,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    _formatDateTime(news.originalNews.fetchTime),
-                    style: Theme.of(context).textTheme.bodySmall,
+                  // 翻译按钮
+                  if (!news.isTranslated)
+                    IconButton(
+                      onPressed: () => onTranslate(news),
+                      icon: const Icon(Icons.translate),
+                      color: AppTheme.primaryColor,
+                      tooltip: '翻译',
+                    ),
+                  // TTS播放按钮
+                  IconButton(
+                    onPressed: () {
+                      if (isPlaying) {
+                        onStopTTS();
+                      } else {
+                        onPlayTTS(
+                          news.originalNews.url, 
+                          news.isTranslated ? news.translatedTitle : news.originalNews.title
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      isPlaying ? Icons.stop : Icons.play_arrow,
+                      color: isPlaying ? AppTheme.errorColor : AppTheme.primaryColor,
+                    ),
+                    tooltip: isPlaying ? '停止播放' : '播放朗读',
                   ),
-                ),
-                if (isPlaying) ...[
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // 底部信息
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      _formatDateTime(news.originalNews.fetchTime),
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  if (isPlaying) ...[                    
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.volume_up,
+                            size: 12,
+                            color: AppTheme.errorColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '播放中',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.errorColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.errorColor.withValues(alpha: 0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.volume_up,
-                          size: 12,
-                          color: AppTheme.errorColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '播放中',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.errorColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      news.isTranslated ? '已翻译' : '原文',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '双语新闻',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

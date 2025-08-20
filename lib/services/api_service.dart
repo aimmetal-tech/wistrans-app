@@ -397,7 +397,7 @@ class ApiService {
     }
   }
 
-  static Future<List<int>> textToSpeech({
+  static Future<List<int>?> generateTTS({
     required String text,
     Map<String, dynamic>? extraArgs,
   }) async {
@@ -425,6 +425,36 @@ class ApiService {
     } catch (e, stackTrace) {
       Log.e('文本转语音失败', e, stackTrace);
       Log.exit('ApiService.textToSpeech');
+      throw Exception('网络请求失败: $e');
+    }
+  }
+
+  // 爬虫相关API
+  static Future<Map<String, dynamic>> crawlUrl(String url, {bool enableFirecrawl = false}) async {
+    Log.enter('ApiService.crawlUrl');
+    try {
+      final queryParams = {
+        'url': url,
+        if (enableFirecrawl) 'enable_firecrawl': 'true',
+      };
+      
+      final uri = Uri.parse('$pythonBaseUrl/crawl').replace(queryParameters: queryParams);
+      Log.network('POST', uri.toString());
+      
+      final response = await http.post(uri);
+      Log.network('POST', uri.toString(), null, response.body);
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        Log.business('爬取URL成功', {'url': url});
+        Log.exit('ApiService.crawlUrl');
+        return result;
+      } else {
+        throw Exception('爬取URL失败: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Log.e('爬取URL失败', e, stackTrace);
+      Log.exit('ApiService.crawlUrl');
       throw Exception('网络请求失败: $e');
     }
   }

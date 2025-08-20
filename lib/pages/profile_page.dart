@@ -42,12 +42,16 @@ class ProfilePage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                appState.currentUser?.username ?? '未登录用户',
+                                appState.isGuestMode 
+                                  ? '访客用户' 
+                                  : (appState.currentUser?.username ?? '未登录用户'),
                                 style: Theme.of(context).textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                appState.isLoggedIn ? '已登录' : '点击登录',
+                                appState.isGuestMode 
+                                  ? '访客模式' 
+                                  : (appState.isLoggedIn ? '已登录' : '点击登录'),
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: AppTheme.textSecondaryColor,
                                 ),
@@ -55,6 +59,13 @@ class ProfilePage extends StatelessWidget {
                             ],
                           ),
                         ),
+                        if (!appState.isLoggedIn && !appState.isGuestMode)
+                          IconButton(
+                            icon: const Icon(Icons.login),
+                            onPressed: () {
+                              Navigator.of(context).pushNamed('/login');
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -196,7 +207,24 @@ class ProfilePage extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                // 退出登录按钮
+                // 登录/注册按钮（当用户未登录且不是访客模式时显示）
+                if (!appState.isLoggedIn && !appState.isGuestMode)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('登录账户'),
+                    ),
+                  ),
+                
+                const SizedBox(height: 16),
+                
+                // 退出登录按钮（仅在已登录时显示）
                 if (appState.isLoggedIn)
                   SizedBox(
                     width: double.infinity,

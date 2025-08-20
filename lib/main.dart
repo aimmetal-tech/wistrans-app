@@ -44,34 +44,15 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Log.enter('AuthWrapper.build');
-    return Consumer<AppState>(
-      builder: (context, appState, child) {
-        Log.business('检查用户登录状态', {'isLoggedIn': appState.isLoggedIn});
-        
-        if (appState.isLoggedIn) {
-          Log.business('用户已登录，跳转到主页');
-          // 使用Future.delayed确保在build完成后进行导航
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed('/main');
-          });
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        } else {
-          Log.business('用户未登录，跳转到登录页面');
-          // 使用Future.delayed确保在build完成后进行导航
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed('/login');
-          });
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-      },
+    // 简化认证逻辑，总是直接进入主应用页面
+    Log.business('跳转到主应用页面');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(context).pushReplacementNamed('/main');
+    });
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

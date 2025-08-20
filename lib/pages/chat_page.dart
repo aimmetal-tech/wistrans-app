@@ -63,7 +63,8 @@ class _ChatPageState extends State<ChatPage> {
     Log.i('Search mode changed: ${value ? 'enabled' : 'disabled'}');
   }
 
-  void _onAutoSearchChanged(bool value) {
+  void _onAutoSearchChanged(bool? value) {
+    if (value == null) return;
     setState(() {
       _isAutoSearchEnabled = value;
     });
@@ -290,11 +291,7 @@ class _ChatPageState extends State<ChatPage> {
                                       Radio<bool>(
                                         value: true,
                                         groupValue: _isAutoSearchEnabled,
-                                        onChanged: (value) {
-                                          if (value != null) {
-                                            _onAutoSearchChanged(value);
-                                          }
-                                        },
+                                        onChanged: _onAutoSearchChanged,
                                       ),
                                       const Expanded(
                                         child: Column(
@@ -320,11 +317,7 @@ class _ChatPageState extends State<ChatPage> {
                                       Radio<bool>(
                                         value: false,
                                         groupValue: _isAutoSearchEnabled,
-                                        onChanged: (value) {
-                                          if (value != null) {
-                                            _onAutoSearchChanged(value);
-                                          }
-                                        },
+                                        onChanged: _onAutoSearchChanged,
                                       ),
                                       const Expanded(
                                         child: Column(
@@ -449,24 +442,25 @@ class _ChatPageState extends State<ChatPage> {
             children: [
               // 抽屉头部 - 用户信息
               UserAccountsDrawerHeader(
-                accountName: const Text(
-                  '英语学习者',
-                  style: TextStyle(
+                accountName: Text(
+                  appState.currentUser?.username ?? '未登录',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                accountEmail: const Text(
-                  'learner@example.com',
-                  style: TextStyle(
+                accountEmail: Text(
+                  '${appState.currentUser?.username ?? '未登录'}@wistrans.com',
+                  style: const TextStyle(
                     fontSize: 14,
                   ),
                 ),
                 currentAccountPicture: CircleAvatar(
-                  backgroundImage: const AssetImage(
-                    'assets/user_demo.png',
-                  ),
                   backgroundColor: AppTheme.primaryColor,
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                  ),
                 ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor,
