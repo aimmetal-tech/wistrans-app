@@ -64,15 +64,6 @@ class _NotesPageState extends State<NotesPage> {
     super.dispose();
   }
 
-  void _addNote() {
-    setState(() {
-      _isAddingNote = true;
-      _isEditingNote = false;
-      _titleController.clear();
-      _contentController.clear();
-      _selectedCategory = '学习笔记';
-    });
-  }
 
   void _editNote(Note note) {
     setState(() {
